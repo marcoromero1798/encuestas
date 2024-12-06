@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Lista de Encuestas</h2>
+    
+    <a href="{% url 'crear_formulario' %}" class="btn btn-primary mb-3">Crear Nueva Encuesta</a>
+
+    {% if formularios %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for formulario in formularios %}
+                    <tr>
+                        <td>{{ formulario.Titulo }}</td>
+                        <td>{{ formulario.Descripcion }}</td>
+                        <td>
+                            <a href="{% url 'detalle_formulario' formulario.id %}" class="btn btn-info btn-sm">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                            <a href="{% url 'editar_formulario' formulario.id %}" class="btn btn-warning btn-sm">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <button onclick="confirmarEliminacion('{{ formulario.id }}', '{{ formulario.Titulo }}')" class="btn btn-danger btn-sm">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info">
+            No hay encuestas disponibles en este momento.
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function confirmarEliminacion(id, titulo) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: `¿Deseas eliminar la encuesta "${titulo}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Realizar la petición POST para eliminar
+            fetch(`/eliminar_formulario/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire(
+                        '¡Eliminado!',
+                        'La encuesta ha sido eliminada.',
+                        'success'
+                    ).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire(
+                        'Error',
+                        'No se pudo eliminar la encuesta.',
+                        'error'
+                    );
+                }
+            });
+        }
+    });
+}
+</script>
+
+{% csrf_token %}
+{% endblock %}

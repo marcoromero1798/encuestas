@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Análisis de Encuesta: {{ encuesta.Titulo }}</h2>
+                <a href="{% url 'detalle_formulario' encuesta.id %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5>Resumen General</h5>
+                    <p class="mb-0">Total de respuestas: <strong>{{ total_respuestas }}</strong></p>
+                </div>
+            </div>
+
+            {% for item in analisis %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ item.pregunta.Titulo }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Estadísticas</h6>
+                            <p>Promedio: <strong>{{ item.promedio }}</strong></p>
+                            <p>Total respuestas: <strong>{{ item.total_respuestas }}</strong></p>
+                        </div>
+                        <div class="col-md-8">
+                            <h6>Distribución de Respuestas</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Valor</th>
+                                            <th>Cantidad</th>
+                                            <th>Porcentaje</th>
+                                            <th>Gráfico</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for d in item.distribucion %}
+                                        <tr>
+                                            <td>{{ d.valor }}</td>
+                                            <td>{{ d.total }}</td>
+                                            <td>{{ d.porcentaje }}%</td>
+                                            <td>
+                                                <div class="progress">
+                                                    <div class="progress-bar" role="progressbar" 
+                                                         style="width: {{ d.porcentaje }}%"
+                                                         aria-valuenow="{{ d.porcentaje }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

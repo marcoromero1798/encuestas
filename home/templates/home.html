@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center text-center mb-5">
+        <div class="col-md-8">
+            <h1 class="display-4 mb-4">Bienvenido al Sistema de Encuestas</h1>
+            <p class="lead text-muted">Una plataforma moderna para crear y gestionar encuestas de manera eficiente</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-text display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Crear Encuestas</h5>
+                    <p class="card-text">Diseña encuestas personalizadas de manera rápida y sencilla.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-graph-up display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Analizar Resultados</h5>
+                    <p class="card-text">Visualiza y analiza los resultados de tus encuestas.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Gestionar Usuarios</h5>
+                    <p class="card-text">Administra los usuarios y sus permisos de manera eficiente.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

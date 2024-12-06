@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ encuesta.Titulo }}</h2>
+            <p class="text-muted">{{ encuesta.Descripcion }}</p>
+            
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Vista Previa</h4>
+                    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#agregarPregunta">
+                        <i class="bi bi-plus-circle"></i> Agregar Pregunta
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="collapse mb-4" id="agregarPregunta">
+                        <div class="card card-body">
+                            <form method="POST">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    {{ pregunta_form.Titulo }}
+                                </div>
+                                <button type="submit" class="btn btn-success mt-3">Guardar Pregunta</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {% if preguntas %}
+                        <form id="previewForm">
+                            {% for pregunta in preguntas %}
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label">{{ pregunta.Titulo }}</label>
+                                    <button type="button" 
+                                            onclick="eliminarPregunta('{{ pregunta.id }}', '{{ pregunta.Titulo }}')" 
+                                            class="btn btn-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="btn-group w-100" role="group">
+                                    {% for i in "123456789"|make_list %}
+                                    <input type="radio" class="btn-check" name="pregunta_{{ pregunta.id }}" 
+                                           id="p{{ pregunta.id }}_{{ i }}" value="{{ i }}">
+                                    <label class="btn btn-outline-primary" for="p{{ pregunta.id }}_{{ i }}">{{ i }}</label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No hay preguntas agregadas a esta encuesta.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información de la Encuesta</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Creada por:</strong> {{ encuesta.ID_Administrador.Nombre }}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'analisis_formulario' encuesta.id %}" class="btn btn-info">
+                            <i class="bi bi-graph-up"></i> Ver Análisis
+                        </a>
+                        <a href="{% url 'log_formulario' encuesta.id %}" class="btn btn-primary">
+                            <i class="bi bi-clock-history"></i> Ver Historial
+                        </a>
+                        <a href="{% url 'completar_formulario' encuesta.id %}" class="btn btn-success">
+                            <i class="bi bi-check2-circle"></i> Completar Encuesta
+                        </a>
+                        <a href="{% url 'editar_formulario' encuesta.id %}" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Editar Encuesta
+                        </a>
+                        <a href="{% url 'lista_formulario' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la Lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function eliminarPregunta(id, titulo) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: `¿Deseas eliminar la pregunta "${titulo}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/eliminar_pregunta/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire(
+                        '¡Eliminado!',
+                        'La pregunta ha sido eliminada.',
+                        'success'
+                    ).then(() => {
+                        window.location.reload();
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %} 

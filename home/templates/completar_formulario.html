@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ encuesta.Titulo }}</h3>
+                    <p class="text-muted mb-0">{{ encuesta.Descripcion }}</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Correo electrónico:</label>
+                            <input type="email" name="correo" class="form-control" required 
+                                   placeholder="ejemplo@correo.com">
+                        </div>
+
+                        {% for pregunta in preguntas %}
+                        <div class="mb-4">
+                            <label class="form-label">{{ pregunta.Titulo }}</label>
+                            <div class="btn-group w-100" role="group">
+                                {% for i in "123456789"|make_list %}
+                                <input type="radio" class="btn-check" name="pregunta_{{ pregunta.id }}" 
+                                       id="p{{ pregunta.id }}_{{ i }}" value="{{ i }}" required>
+                                <label class="btn btn-outline-primary" for="p{{ pregunta.id }}_{{ i }}">{{ i }}</label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Enviar Respuestas
+                            </button>
+                            <a href="{% url 'home' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const radios = form.querySelectorAll('input[type="radio"]');
+        const grupos = {};
+        
+        // Agrupar radios por pregunta
+        radios.forEach(radio => {
+            const name = radio.name;
+            if (!grupos[name]) grupos[name] = false;
+            if (radio.checked) grupos[name] = true;
+        });
+        
+        // Verificar si todas las preguntas tienen respuesta
+        const faltanRespuestas = Object.values(grupos).includes(false);
+        
+        if (faltanRespuestas) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Error',
+                text: 'Por favor responde todas las preguntas',
+                icon: 'error',
+                confirmButtonText: 'Entendido'
+            });
+        }
+    });
+});
+</script>
+{% endblock %} 
