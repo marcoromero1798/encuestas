@@ -1,22 +1,55 @@
+"""
+Este archivo contiene todas las vistas (views) del sistema de encuestas.
+Las vistas son funciones que procesan las peticiones HTTP y retornan respuestas.
+"""
+
+# Importaciones necesarias
 import datetime
-from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login
-from django.contrib import messages
-from django.contrib.auth.forms import UserCreationForm
-from django.db.models import Count, Avg
-from django.db.models.functions import Round
-from .models import *  
-from .forms import *
+from django.http import JsonResponse  # Para retornar respuestas JSON
+from django.shortcuts import render, redirect, get_object_or_404  # Funciones de utilidad de Django
+from django.contrib.auth import authenticate, login  # Para autenticación
+from django.contrib import messages  # Para mostrar mensajes al usuario
+from django.contrib.auth.forms import UserCreationForm  # Formulario de registro
+from django.db.models import Count, Avg  # Para operaciones de agregación
+from django.db.models.functions import Round  # Para redondear números
+from .models import *  # Importa todos los modelos
+from .forms import *  # Importa todos los formularios
 
 def home(request):
+    """
+    Vista de la página principal.
+    Simplemente renderiza la plantilla home.html
+    """
     return render(request, 'home.html')
 
 def lista_formulario(request):
-    formularios = Encuesta.objects.all()  # Obtiene todas las encuestas
+    """
+    Muestra la lista de todas las encuestas disponibles.
+    
+    Ejemplo de uso:
+    /lista_formulario/ -> Muestra todas las encuestas en una tabla
+    """
+    formularios = Encuesta.objects.all()  # Obtiene todas las encuestas de la base de datos
     return render(request, 'lista_formulario.html', {'formularios': formularios})
 
 def crear_formulario(request):
+    """
+    Permite crear una nueva encuesta.
+    Solo usuarios autenticados pueden crear encuestas.
+    
+    Flujo:
+    1. Verifica que el usuario esté autenticado
+    2. Si es POST, procesa el formulario
+    3. Si es GET, muestra el formulario vacío
+    
+    Ejemplo:
+    POST /crear_formulario/ 
+    {
+        'titulo': 'Mi encuesta',
+        'descripcion': 'Una encuesta de ejemplo'
+    }
+    """
+    # Verifica autenticación
     if not request.user.is_authenticated:
         messages.error(request, 'Debe iniciar sesión para crear una encuesta')
         return redirect('login')
@@ -25,12 +58,12 @@ def crear_formulario(request):
         form = EncuestaForm(request.POST)
         if form.is_valid():
             encuesta = form.save(commit=False)
-            # Obtener el administrador del usuario actual
+            # Asocia la encuesta con el administrador actual
             administrador = Administrador.objects.get(ID_Administrador=request.user)
             encuesta.ID_Administrador = administrador
             encuesta.save()
             
-            # Crear registro en el log
+            # Registra la creación en el log
             log = Log(
                 ID_Encuesta=encuesta,
                 ID_Administrador=administrador,
@@ -48,6 +81,16 @@ def crear_formulario(request):
     return render(request, 'formulario.html', {'form': form})
 
 def login_view(request):
+    """
+    Maneja el inicio de sesión de usuarios.
+    
+    Ejemplo de uso:
+    POST /login/
+    {
+        'username': 'usuario',
+        'password': 'contraseña'
+    }
+    """
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
@@ -56,19 +99,31 @@ def login_view(request):
         if user is not None:
             login(request, user)
             messages.success(request, f'Bienvenido {username}!')
-            return redirect('home')  # Redirige a la página principal después del login
+            return redirect('home')
         else:
             messages.error(request, 'Usuario o contraseña incorrectos')
     
     return render(request, 'login.html')
 
 def register(request):
+    """
+    Maneja el registro de nuevos usuarios.
+    Crea tanto un usuario Django como un registro en la tabla Administrador.
+    
+    Ejemplo:
+    POST /register/
+    {
+        'username': 'nuevo_usuario',
+        'password1': 'contraseña',
+        'password2': 'contraseña'
+    }
+    """
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             
-            # Crear registro en la tabla Administrador
+            # Crea el registro de administrador asociado
             administrador = Administrador(
                 ID_Administrador=user,
                 Nombre=user.username,
@@ -85,10 +140,23 @@ def register(request):
     return render(request, 'register.html', {'form': form})
 
 def lista_establecimiento(request):
+    """
+    Muestra la lista de todos los establecimientos registrados.
+    """
     establecimientos = Establecimiento.objects.all()
     return render(request, 'lista_establecimiento.html', {'establecimientos': establecimientos})
 
 def crear_establecimiento(request):
+    """
+    Permite crear un nuevo establecimiento.
+    
+    Ejemplo:
+    POST /crear_establecimiento/
+    {
+        'nombre': 'Mi Establecimiento',
+        'direccion': 'Calle Principal 123'
+    }
+    """
     if request.method == 'POST':
         form = EstablecimientoForm(request.POST)
         if form.is_valid():
@@ -102,6 +170,12 @@ def crear_establecimiento(request):
     return render(request, 'establecimiento.html', {'form': form})
 
 def editar_establecimiento(request, id):
+    """
+    Permite editar un establecimiento existente.
+    
+    Parámetros:
+    id -- ID del establecimiento a editar
+    """
     establecimiento = get_object_or_404(Establecimiento, ID_Establecimiento=id)
     if request.method == 'POST':
         form = EstablecimientoForm(request.POST, instance=establecimiento)
@@ -116,6 +190,12 @@ def editar_establecimiento(request, id):
     return render(request, 'establecimiento.html', {'form': form})
 
 def eliminar_establecimiento(request, id):
+    """
+    Elimina un establecimiento existente.
+    
+    Parámetros:
+    id -- ID del establecimiento a eliminar
+    """
     establecimiento = get_object_or_404(Establecimiento, ID_Establecimiento=id)
     if request.method == 'POST':
         try:
@@ -127,6 +207,13 @@ def eliminar_establecimiento(request, id):
     return render(request, 'confirmar_eliminar.html', {'objeto': establecimiento})
 
 def editar_formulario(request, id):
+    """
+    Permite editar una encuesta existente.
+    Solo usuarios autenticados pueden editar encuestas.
+    
+    Parámetros:
+    id -- ID de la encuesta a editar
+    """
     encuesta = get_object_or_404(Encuesta, id=id)
     
     if not request.user.is_authenticated:
@@ -141,7 +228,7 @@ def editar_formulario(request, id):
             encuesta.ID_Administrador = administrador
             encuesta.save()
             
-            # Crear registro en el log
+            # Registra la edición en el log
             log = Log(
                 ID_Encuesta=encuesta,
                 ID_Administrador=administrador,
@@ -159,6 +246,16 @@ def editar_formulario(request, id):
     return render(request, 'formulario.html', {'form': form, 'edicion': True})
 
 def eliminar_formulario(request, id):
+    """
+    Elimina una encuesta existente.
+    Solo usuarios autenticados pueden eliminar encuestas.
+    
+    Parámetros:
+    id -- ID de la encuesta a eliminar
+    
+    Retorna:
+    JsonResponse con el resultado de la operación
+    """
     encuesta = get_object_or_404(Encuesta, id=id)
     
     if not request.user.is_authenticated:
@@ -168,7 +265,7 @@ def eliminar_formulario(request, id):
         try:
             administrador = Administrador.objects.get(ID_Administrador=request.user)
             
-            # Crear registro en el log antes de eliminar
+            # Registra la eliminación en el log
             log = Log(
                 ID_Encuesta=encuesta,
                 ID_Administrador=administrador,
@@ -184,6 +281,12 @@ def eliminar_formulario(request, id):
     return JsonResponse({'success': False, 'message': 'Método no permitido'})
 
 def detalle_formulario(request, id):
+    """
+    Muestra el detalle de una encuesta y permite agregar preguntas.
+    
+    Parámetros:
+    id -- ID de la encuesta a mostrar
+    """
     encuesta = get_object_or_404(Encuesta, id=id)
     preguntas = Pregunta.objects.filter(ID_Encuesta=encuesta)
     
@@ -194,7 +297,7 @@ def detalle_formulario(request, id):
             pregunta.ID_Encuesta = encuesta
             pregunta.save()
             
-            # Registro en el log
+            # Registra la nueva pregunta en el log
             administrador = Administrador.objects.get(ID_Administrador=request.user)
             log = Log(
                 ID_Encuesta=encuesta,
@@ -216,6 +319,16 @@ def detalle_formulario(request, id):
     return render(request, 'detalle_formulario.html', context)
 
 def eliminar_pregunta(request, id):
+    """
+    Elimina una pregunta de una encuesta.
+    Solo usuarios autenticados pueden eliminar preguntas.
+    
+    Parámetros:
+    id -- ID de la pregunta a eliminar
+    
+    Retorna:
+    JsonResponse con el resultado de la operación
+    """
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'message': 'No autorizado'})
         
@@ -225,7 +338,7 @@ def eliminar_pregunta(request, id):
             encuesta = pregunta.ID_Encuesta
             administrador = Administrador.objects.get(ID_Administrador=request.user)
             
-            # Registro en el log
+            # Registra la eliminación en el log
             log = Log(
                 ID_Encuesta=encuesta,
                 ID_Administrador=administrador,
@@ -241,6 +354,20 @@ def eliminar_pregunta(request, id):
     return JsonResponse({'success': False, 'message': 'Método no permitido'})
 
 def completar_formulario(request, id):
+    """
+    Permite a un usuario completar una encuesta.
+    
+    Parámetros:
+    id -- ID de la encuesta a completar
+    
+    Ejemplo de uso:
+    POST /completar_formulario/1/
+    {
+        'correo': 'usuario@ejemplo.com',
+        'pregunta_1': '8',
+        'pregunta_2': '7'
+    }
+    """
     encuesta = get_object_or_404(Encuesta, id=id)
     preguntas = Pregunta.objects.filter(ID_Encuesta=encuesta)
     
@@ -263,7 +390,7 @@ def completar_formulario(request, id):
                     ID_Pregunta=pregunta
                 )
                 
-                # Registro en el log
+                # Registra la respuesta en el log
                 log = Log(
                     ID_Encuesta=encuesta,
                     ID_Encuestado=encuestado,
@@ -281,6 +408,17 @@ def completar_formulario(request, id):
     })
 
 def analisis_formulario(request, id):
+    """
+    Muestra el análisis estadístico de una encuesta.
+    
+    Parámetros:
+    id -- ID de la encuesta a analizar
+    
+    Calcula:
+    - Promedio de respuestas por pregunta
+    - Distribución de respuestas
+    - Porcentajes de cada respuesta
+    """
     encuesta = get_object_or_404(Encuesta, id=id)
     preguntas = Pregunta.objects.filter(ID_Encuesta=encuesta)
     
@@ -291,18 +429,18 @@ def analisis_formulario(request, id):
         respuestas = Respuesta.objects.filter(ID_Pregunta=pregunta)
         total_respuestas = respuestas.count()
         
-        # Calcular estadísticas
+        # Calcular estadísticas básicas
         stats = {
             'promedio': Round(Avg('Respuesta'), 2),
             'distribucion': Count('Respuesta'),
         }
         
-        # Distribución de respuestas
+        # Obtener distribución de respuestas
         distribucion = respuestas.values('Respuesta').annotate(
             total=Count('id')
         ).order_by('Respuesta')
         
-        # Convertir a porcentajes
+        # Calcular porcentajes
         distribucion_porcentaje = []
         for d in distribucion:
             porcentaje = (d['total'] / total_respuestas * 100) if total_respuestas > 0 else 0
@@ -326,6 +464,12 @@ def analisis_formulario(request, id):
     })
 
 def log_formulario(request, id):
+    """
+    Muestra el historial de actividades (log) de una encuesta.
+    
+    Parámetros:
+    id -- ID de la encuesta
+    """
     encuesta = get_object_or_404(Encuesta, id=id)
     logs = Log.objects.filter(ID_Encuesta=encuesta).order_by('-Fecha')
     

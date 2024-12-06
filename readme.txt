@@ -1,5 +1,17 @@
 # Sistema de Encuestas
 
+encuestas/              # Directorio raíz del proyecto
+├── encuestas/         # Configuración principal del proyecto
+│   ├── settings.py    # Configuraciones de Django
+│   ├── urls.py        # URLs principales
+│   └── wsgi.py        # Configuración para despliegue
+├── home/              # Aplicación principal
+│   ├── models.py      # Modelos de la base de datos
+│   ├── views.py       # Vistas y lógica de negocio
+│   ├── forms.py       # Formularios
+│   └── urls.py        # URLs de la aplicación
+└── manage.py          # Script de administración de Django
+
 ## Descripción
 Sistema web desarrollado en Django para la gestión de encuestas, permitiendo crear, administrar y analizar encuestas con un sistema de puntuación del 1 al 9.
 
